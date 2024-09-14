@@ -60,10 +60,38 @@ function onClick(block: BlockState) {
     generateMines(block)
     firstClick = false
   }
-  block.opened = true
+
   if (block.isMine) {
     // alert('BOOOOOM!')
+    return
   }
+
+  block.opened = true
+  expandZero(block) // 从当前块扩展所有空白块
+}
+
+function getSiblings(block: BlockState) {
+  return DIRECTIONS.map(([dx, dy]) => {
+    const x2 = block.x + dx // 不能让x自增!
+    const y2 = block.y + dy
+    if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT) {
+      return undefined
+    }
+
+    return state[x2][y2]
+  })
+    .filter(Boolean) as BlockState[] // 将undefined过滤掉，只剩下有效数据
+}
+
+function expandZero(block: BlockState) {
+  if (block.adjacentMines !== 0) return
+
+  getSiblings(block).forEach((sibling) => {
+    if (!sibling.opened) {
+      sibling.opened = true
+      expandZero(sibling)
+    }
+  })
 }
 
 function updateMineCounts() {
@@ -73,15 +101,9 @@ function updateMineCounts() {
         return
       }
       let count = 0
-      DIRECTIONS.forEach(([dx, dy]) => {
-        const x2 = x + dx // 不能让x自增，因为x，y后续还要使用
-        const y2 = y + dy
-        if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT) {
-          return
-        }
-        if (state[x2][y2].isMine) {
-          count++
-        }
+
+      getSiblings(item).forEach((sibling) => {
+        if (sibling.isMine) count++
       })
       item.adjacentMines = count
     })
@@ -97,7 +119,7 @@ function generateMines(firstBlock: BlockState) {
           continue
         }
       }
-      block.isMine = Math.random() < 0.3
+      block.isMine = Math.random() < 0.15
     }
   }
   updateMineCounts()
