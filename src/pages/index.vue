@@ -61,13 +61,26 @@ function onClick(block: BlockState) {
     firstClick = false
   }
 
-  if (block.isMine) {
-    // alert('BOOOOOM!')
-    return
-  }
 
   block.opened = true
+  if (block.isMine) {
+    setTimeout(() => {
+      alert('BOOOOOM!')
+    }, 500)
+    return
+  }
   expandZero(block) // 从当前块扩展所有空白块
+
+  if (checkWin()) {
+    setTimeout(() => {
+      alert('You win!')
+    }, 500)
+  }
+}
+
+function onRightClick(block: BlockState) {
+  if (block.opened) return
+  block.flagged = !block.flagged
 }
 
 function getSiblings(block: BlockState) {
@@ -119,12 +132,15 @@ function generateMines(firstBlock: BlockState) {
           continue
         }
       }
-      block.isMine = Math.random() < 0.15
+      block.isMine = Math.random() < 0.2
     }
   }
   updateMineCounts()
 }
 
+function checkWin() {
+  return state.flat().every((block) => block.opened || block.isMine)
+}
 
 </script>
 
@@ -149,6 +165,7 @@ function generateMines(firstBlock: BlockState) {
         items-center justify-center
         :class="getBlockClass(item)"
         @click="onClick(item)"
+        @contextmenu.prevent="onRightClick(item)"
       >
         <template v-if="item.opened || DEV">
           <div v-if="item.isMine" i-mdi-mine />
@@ -157,7 +174,7 @@ function generateMines(firstBlock: BlockState) {
           </div>
         </template>
         <template v-else>
-
+          <div v-if="item.flagged" i-mdi-flag text-red />
         </template>
       </button>
     </div>
